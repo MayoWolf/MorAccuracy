@@ -35,11 +35,11 @@ function renderHero() {
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">MorScout Accuracy Analyzer</p>
-        <h1>Audit your scouts like a pit crew, not a spreadsheet.</h1>
+        <h1>Scout accuracy, shown like a match board.</h1>
         <p class="lede">
           Your CSV stays in the browser. The app pulls official event results from TBA,
-          estimates per-robot ground truth for objective fields, and spits out a scout
-          leaderboard with accuracy, consistency, and bias.
+          estimates per-robot ground truth for objective fields, and ranks scouts by
+          overall accuracy plus phase-specific lines.
         </p>
         <div class="hero-strip">
           <span class="hero-chip">${state.csvText ? "CSV locked in" : "CSV needed"}</span>
@@ -145,6 +145,12 @@ function renderSummary(result) {
           <strong>${escapeHtml(summary.topScout || "N/A")}</strong>
         </article>
       </div>
+      <div class="mini-leaders">
+        <span>Best Fuel: <strong>${escapeHtml(summary.topGroupScouts.fuel || "N/A")}</strong></span>
+        <span>Best Auto: <strong>${escapeHtml(summary.topGroupScouts.auto || "N/A")}</strong></span>
+        <span>Best Tower: <strong>${escapeHtml(summary.topGroupScouts.tower || "N/A")}</strong></span>
+        <span>Best Endgame: <strong>${escapeHtml(summary.topGroupScouts.endgame || "N/A")}</strong></span>
+      </div>
     </section>
   `;
 }
@@ -160,6 +166,10 @@ function renderLeaderboard(result) {
             <div class="table-sub">${entry.entries} matched entries</div>
           </td>
           <td>${formatPercent(entry.accuracy)}</td>
+          <td>${formatPercent(entry.groupScores.fuel)}</td>
+          <td>${formatPercent(entry.groupScores.auto)}</td>
+          <td>${formatPercent(entry.groupScores.tower)}</td>
+          <td>${formatPercent(entry.groupScores.endgame)}</td>
           <td>${formatPercent(entry.consistency)}</td>
           <td class="bias-${escapeHtml(entry.bias)}">${escapeHtml(entry.bias)}</td>
           <td>${entry.averageSignedError > 0 ? "+" : ""}${entry.averageSignedError.toFixed(2)}</td>
@@ -180,7 +190,11 @@ function renderLeaderboard(result) {
             <tr>
               <th>Rank</th>
               <th>Scout</th>
-              <th>Accuracy</th>
+              <th>Overall</th>
+              <th>Fuel</th>
+              <th>Auto</th>
+              <th>Tower</th>
+              <th>Endgame</th>
               <th>Consistency</th>
               <th>Bias</th>
               <th>Avg Signed Error</th>
@@ -214,8 +228,8 @@ function renderCoverage(result) {
     <section class="two-up">
       <div class="panel">
         <div class="panel-heading">
-          <h2>Metric Coverage</h2>
-          <p>Only objective fields with an official TBA equivalent are benchmarked.</p>
+          <h2>Benchmark Lines</h2>
+          <p>Overall ranking now includes fuel, auto, tower, and endgame sub-scores.</p>
         </div>
         <div class="coverage-grid">${coverageCards}</div>
       </div>

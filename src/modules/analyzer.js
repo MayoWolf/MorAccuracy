@@ -31,6 +31,29 @@ const OBJECTIVE_METRICS = [
   },
 ];
 
+const SCORE_GROUPS = [
+  {
+    key: "fuel",
+    label: "Fuel",
+    metricKeys: ["autoHubCount", "teleopHubCount"],
+  },
+  {
+    key: "auto",
+    label: "Auto",
+    metricKeys: ["autoHubCount", "autoTowerCount"],
+  },
+  {
+    key: "tower",
+    label: "Tower",
+    metricKeys: ["autoTowerCount", "endgameTowerLevel"],
+  },
+  {
+    key: "endgame",
+    label: "Endgame",
+    metricKeys: ["endgameTowerLevel"],
+  },
+];
+
 const towerLevelMap = {
   None: 0,
   "Level 1": 1,
@@ -406,9 +429,19 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
       sum(entry.metricResults.map((metric) => metric.accuracy * metric.weight)) / totalWeight;
     const meanSignedError = mean(entry.metricResults.map((metric) => metric.normalizedError));
 
+    const groupScores = {};
+    for (const group of SCORE_GROUPS) {
+      const groupMetrics = entry.metricResults.filter((metric) => group.metricKeys.includes(metric.key));
+      const groupWeight = sum(groupMetrics.map((metric) => metric.weight));
+      groupScores[group.key] = groupWeight
+        ? sum(groupMetrics.map((metric) => metric.accuracy * metric.weight)) / groupWeight
+        : 0;
+    }
+
     entry.accuracy = weightedAccuracy;
     entry.signedError = meanSignedError;
     entry.bias = computeBiasDirection(meanSignedError);
+    entry.groupScores = groupScores;
   }
 
   const byScout = groupBy(rowEntries, (entry) => entry.scoutName);
@@ -416,6 +449,12 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
     .map(([scoutName, entries]) => {
       const accuracies = entries.map((entry) => entry.accuracy);
       const normalizedErrors = entries.map((entry) => entry.signedError);
+      const groupScores = Object.fromEntries(
+        SCORE_GROUPS.map((group) => [
+          group.key,
+          mean(entries.map((entry) => entry.groupScores?.[group.key] ?? 0)),
+        ]),
+      );
       return {
         rank: 0,
         scoutName,
@@ -424,6 +463,7 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
         consistency: Math.max(0, 100 - standardDeviation(accuracies) * 2),
         averageSignedError: mean(normalizedErrors),
         bias: computeBiasDirection(mean(normalizedErrors)),
+        groupScores,
       };
     })
     .sort((left, right) => {
@@ -446,10 +486,19 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
       totalScouts: leaderboard.length,
       averageAccuracy: mean(leaderboard.map((entry) => entry.accuracy)),
       topScout: leaderboard[0]?.scoutName ?? null,
+      topGroupScouts: Object.fromEntries(
+        SCORE_GROUPS.map((group) => [
+          group.key,
+          [...leaderboard].sort(
+            (left, right) => (right.groupScores?.[group.key] ?? 0) - (left.groupScores?.[group.key] ?? 0),
+          )[0]?.scoutName ?? null,
+        ]),
+      ),
     },
     leaderboard,
     entries: rowEntries.sort((left, right) => right.accuracy - left.accuracy),
     metricCoverage,
+    scoreGroups: SCORE_GROUPS,
     warnings: [...new Set(warnings)].slice(0, 12),
   };
 }

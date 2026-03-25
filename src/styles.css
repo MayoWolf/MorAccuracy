@@ -53,7 +53,7 @@ body {
 }
 
 .hero {
-  grid-template-columns: 1.4fr 0.9fr;
+  grid-template-columns: 1.1fr 0.9fr;
   margin-bottom: 22px;
 }
 
@@ -108,8 +108,8 @@ h3 {
 }
 
 h1 {
-  max-width: 10ch;
-  font-size: clamp(3rem, 7vw, 5.7rem);
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 4.8vw, 4.3rem);
 }
 
 h2 {
@@ -173,6 +173,28 @@ small {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 246, 231, 0.95)),
     var(--paper-strong);
+}
+
+.mini-leaders {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mini-leaders span {
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: white;
+  font-size: 0.92rem;
+}
+
+.mini-leaders strong {
+  display: block;
+  margin-top: 4px;
+  font-family: "Archivo Black", sans-serif;
+  font-size: 1rem;
 }
 
 .panel-heading {
@@ -413,6 +435,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.96rem;
+  min-width: 980px;
 }
 
 th,
@@ -428,6 +451,14 @@ th {
 
 tbody tr:nth-child(even) {
   background: rgba(28, 87, 226, 0.05);
+}
+
+tbody td:nth-child(3),
+tbody td:nth-child(4),
+tbody td:nth-child(5),
+tbody td:nth-child(6),
+tbody td:nth-child(7) {
+  font-weight: 700;
 }
 
 .table-name {
@@ -466,7 +497,8 @@ code {
   .two-up,
   .form-grid,
   .stat-grid,
-  .coverage-grid {
+  .coverage-grid,
+  .mini-leaders {
     grid-template-columns: 1fr;
   }
 
