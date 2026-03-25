@@ -449,6 +449,10 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
     .map(([scoutName, entries]) => {
       const accuracies = entries.map((entry) => entry.accuracy);
       const normalizedErrors = entries.map((entry) => entry.signedError);
+      const accurate85Rate =
+        entries.length > 0
+          ? (entries.filter((entry) => entry.accuracy >= 85).length / entries.length) * 100
+          : 0;
       const groupScores = Object.fromEntries(
         SCORE_GROUPS.map((group) => [
           group.key,
@@ -461,6 +465,7 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
         entries: entries.length,
         accuracy: mean(accuracies),
         consistency: Math.max(0, 100 - standardDeviation(accuracies) * 2),
+        accurate85Rate,
         averageSignedError: mean(normalizedErrors),
         bias: computeBiasDirection(mean(normalizedErrors)),
         groupScores,
@@ -485,6 +490,7 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
       matchedRows: rowEntries.length,
       totalScouts: leaderboard.length,
       averageAccuracy: mean(leaderboard.map((entry) => entry.accuracy)),
+      average85Rate: mean(leaderboard.map((entry) => entry.accurate85Rate)),
       topScout: leaderboard[0]?.scoutName ?? null,
       topGroupScouts: Object.fromEntries(
         SCORE_GROUPS.map((group) => [
@@ -494,6 +500,9 @@ export function analyzeScoutingData({ scoutingRows, tbaPayload, eventKey }) {
           )[0]?.scoutName ?? null,
         ]),
       ),
+      top85RateScout: [...leaderboard].sort(
+        (left, right) => (right.accurate85Rate ?? 0) - (left.accurate85Rate ?? 0),
+      )[0]?.scoutName ?? null,
     },
     leaderboard,
     entries: rowEntries.sort((left, right) => right.accuracy - left.accuracy),
