@@ -141,13 +141,13 @@ function renderSummary(result) {
           <strong>${formatPercent(summary.averageAccuracy)}</strong>
         </article>
         <article class="stat-card">
-          <span>85%+ hit rate</span>
-          <strong>${formatPercent(summary.average85Rate)}</strong>
+          <span>85%+ data points</span>
+          <strong>${summary.matchedRowsAt85OrBetter}/${summary.matchedRows}</strong>
         </article>
       </div>
       <div class="mini-leaders">
         <span>Most Reliable: <strong>${escapeHtml(summary.topScout || "N/A")}</strong></span>
-        <span>Best 85%+ Rate: <strong>${escapeHtml(summary.top85RateScout || "N/A")}</strong></span>
+        <span>85%+ Share: <strong>${formatPercent(summary.matchedRowsAt85OrBetterRate)}</strong></span>
         <span>Best Fuel: <strong>${escapeHtml(summary.topGroupScouts.fuel || "N/A")}</strong></span>
         <span>Best Auto: <strong>${escapeHtml(summary.topGroupScouts.auto || "N/A")}</strong></span>
         <span>Best Tower: <strong>${escapeHtml(summary.topGroupScouts.tower || "N/A")}</strong></span>
@@ -168,7 +168,6 @@ function renderLeaderboard(result) {
             <div class="table-sub">${entry.entries} matched entries</div>
           </td>
           <td>${formatPercent(entry.accuracy)}</td>
-          <td>${formatPercent(entry.accurate85Rate)}</td>
           <td>${formatPercent(entry.groupScores.fuel)}</td>
           <td>${formatPercent(entry.groupScores.auto)}</td>
           <td>${formatPercent(entry.groupScores.tower)}</td>
@@ -194,7 +193,6 @@ function renderLeaderboard(result) {
               <th>Rank</th>
               <th>Scout</th>
               <th>Overall</th>
-              <th>85%+ Rate</th>
               <th>Fuel</th>
               <th>Auto</th>
               <th>Tower</th>
