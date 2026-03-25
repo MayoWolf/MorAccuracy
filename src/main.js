@@ -35,20 +35,24 @@ function renderHero() {
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">MorScout Accuracy Analyzer</p>
-        <h1>Turn raw scouting logs into a ranked accuracy board.</h1>
+        <h1>Audit your scouts like a pit crew, not a spreadsheet.</h1>
         <p class="lede">
-          Upload a MorScout export, point the app at an event on The Blue Alliance,
-          and it will score each scout against objective match outcomes for the
-          benchmarkable fields in your sheet.
+          Your CSV stays in the browser. The app pulls official event results from TBA,
+          estimates per-robot ground truth for objective fields, and spits out a scout
+          leaderboard with accuracy, consistency, and bias.
         </p>
+        <div class="hero-strip">
+          <span class="hero-chip">${state.csvText ? "CSV locked in" : "CSV needed"}</span>
+          <span class="hero-chip">${state.eventKey ? `Event ${escapeHtml(state.eventKey)}` : "Enter event key"}</span>
+        </div>
       </div>
       <div class="hero-callout">
-        <p class="callout-title">Benchmarked fields</p>
+        <p class="callout-title">Benchmarked Right Now</p>
         <ul class="metric-list">
           ${benchmarkedMetricLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join("")}
         </ul>
         <p class="callout-note">
-          Powered by your MorScout CSV plus official TBA match breakdowns via a Netlify function.
+          Netlify env var: <code>TBA_API_KEY</code>
         </p>
       </div>
     </section>
@@ -59,8 +63,14 @@ function renderControls() {
   return `
     <section class="panel panel-form">
       <div class="panel-heading">
-        <h2>Analyze Event</h2>
-        <p>Use the event key from The Blue Alliance, like <code>2026casj</code>.</p>
+        <div>
+          <h2>Run Event Analysis</h2>
+          <p>Use the event key from The Blue Alliance, like <code>2026casj</code>.</p>
+        </div>
+        <div class="status-block">
+          <span class="status-kicker">Upload State</span>
+          <strong>${state.csvText ? "CSV already loaded" : "Waiting for CSV"}</strong>
+        </div>
       </div>
       <form id="analysis-form" class="form-grid">
         <label class="field">
@@ -74,19 +84,36 @@ function renderControls() {
             required
           />
         </label>
-        <label class="field field-upload">
+        <div class="field field-upload">
           <span>MorScout CSV</span>
-          <input id="csv-file" name="csvFile" type="file" accept=".csv,text/csv" required />
-          <small>${state.csvFileName ? `Loaded: ${escapeHtml(state.csvFileName)}` : "Choose your exported scouting CSV."}</small>
-        </label>
-        <button class="primary-button" type="submit" ${state.loading ? "disabled" : ""}>
-          ${state.loading ? "Analyzing..." : "Run Analysis"}
-        </button>
+          <input id="csv-file" name="csvFile" type="file" accept=".csv,text/csv" class="sr-only" />
+          <label for="csv-file" class="upload-card ${state.csvText ? "is-loaded" : ""}">
+            <span class="upload-badge">${state.csvText ? "Loaded" : "Upload"}</span>
+            <strong>${escapeHtml(state.csvFileName || "Choose your exported MorScout CSV")}</strong>
+            <small>${
+              state.csvText
+                ? "This file is already stored in browser memory. You do not need to pick it again for reruns."
+                : "Pick the file once. After that, you can rerun analysis without reselecting it."
+            }</small>
+          </label>
+          <div class="upload-actions">
+            ${
+              state.csvText
+                ? '<button id="clear-file" type="button" class="ghost-button">Clear loaded file</button>'
+                : '<span class="upload-hint">The browser will keep the parsed CSV while this page stays open.</span>'
+            }
+          </div>
+        </div>
+        <div class="action-cell">
+          <button class="primary-button" type="submit" ${state.loading ? "disabled" : ""}>
+            ${state.loading ? "Analyzing..." : "Run Analysis"}
+          </button>
+        </div>
       </form>
       ${
         state.error
           ? `<div class="notice notice-error">${escapeHtml(state.error)}</div>`
-          : `<div class="notice">The browser keeps your CSV local. Only the event key is sent to the Netlify function for official TBA data.</div>`
+          : `<div class="notice">Only the event key goes to the Netlify function. Your CSV content stays in the browser.</div>`
       }
     </section>
   `;
@@ -273,6 +300,7 @@ function render() {
   const form = document.querySelector("#analysis-form");
   const fileInput = document.querySelector("#csv-file");
   const eventInput = document.querySelector("#event-key");
+  const clearFileButton = document.querySelector("#clear-file");
 
   if (eventInput) {
     eventInput.addEventListener("input", (event) => {
@@ -293,7 +321,18 @@ function render() {
     });
   }
 
+  if (clearFileButton) {
+    clearFileButton.addEventListener("click", () => {
+      state.csvFileName = "";
+      state.csvText = "";
+      state.result = null;
+      state.error = "";
+      render();
+    });
+  }
+
   if (form) {
+    form.noValidate = true;
     form.addEventListener("submit", handleSubmit);
   }
 }
