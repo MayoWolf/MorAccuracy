@@ -1,79 +1,83 @@
 # MorScout Accuracy Analyzer
 
-MorScout Accuracy Analyzer is a lightweight Python CLI that compares MorScout scouting observations against Statbotics-style benchmark metrics, scores each scouting entry, and produces a ranked scout leaderboard.
+MorScout Accuracy Analyzer is a Netlify-ready web app that uploads a MorScout scouting export, fetches official event match data from The Blue Alliance through a secure serverless function, and ranks scouts by how closely their objective observations line up with the official benchmark.
 
-## What It Does
+## What This Version Scores
 
-- Calculates entry-level and scout-level accuracy percentages.
-- Ranks scouts from most accurate to least accurate.
-- Flags bias trends like overcounting or undercounting.
-- Exports leaderboard, per-entry summaries, and a JSON analysis snapshot.
+Your current CSV schema supports objective benchmarking for:
 
-## Input Model
+- `Auto FUEL Scored`
+- `Teleop FUEL Scored`
+- `Auto TOWER Level 1?`
+- `Teleop TOWER Level`
 
-The MVP uses two CSV files:
+The app intentionally does **not** score comments, defense notes, reliability tags, or other qualitative fields because TBA does not provide ground-truth data for those.
 
-- `scouting.csv`: one row per scout observation, including a scout name and match/team identifiers.
-- `benchmarks.csv`: one row per benchmark target, using the same identifiers and comparable metric columns.
+## How The Scoring Works
 
-By default, the analyzer looks for:
+- The browser parses the uploaded MorScout CSV locally.
+- A Netlify function calls TBA using the `X-TBA-Auth-Key` header and returns event + match JSON.
+- Qualification matches are matched by `Match Number` and `Team Number`.
+- Official alliance metrics are taken from TBA's 2026 score breakdown:
+  - hub auto count
+  - hub teleop count
+  - auto tower completion count
+  - endgame tower level sum
+- The analyzer estimates each robot's contribution while constraining every alliance total to match the official TBA score breakdown.
+- Each scout receives:
+  - an accuracy percentage
+  - a consistency score
+  - an overcounting / undercounting / balanced bias label
 
-- `scout_name` as the scout identifier
-- `team_key` and `match_key` as join keys
-- shared numeric or boolean-like columns as metrics
+## Local Development
 
-You can override those assumptions with `config.example.json`.
-
-## Scoring Model
-
-For each shared metric:
-
-- The tool computes a normalized error using either a configured `scale` or `max(abs(expected), abs(observed), 1)`.
-- Metric accuracy is `max(0, 1 - normalized_error) * 100`.
-- Entry accuracy is the weighted average across included metrics.
-- Scout accuracy is the average of that scout's entry accuracies.
-- Bias is based on signed normalized error:
-  - positive means overcounting
-  - negative means undercounting
-
-## Quick Start
+Install dependencies:
 
 ```bash
-python3 -m morscout_accuracy \
-  --scouting sample_data/scouting.csv \
-  --benchmarks sample_data/benchmarks.csv \
-  --config config.example.json \
-  --output-dir output
+npm install
 ```
 
-## Output Files
+Start the Vite dev server:
 
-The CLI writes:
+```bash
+npm run dev
+```
 
-- `output/leaderboard.csv`
-- `output/entry_details.csv`
-- `output/summary.json`
+If you want the Netlify function locally as well, use Netlify CLI instead:
 
-## Example Config
+```bash
+netlify dev
+```
 
-`config.example.json` shows how to:
+## Deploy To Netlify
 
-- define the scout column
-- set join keys
-- assign metric weights
-- pin metric scales so accuracy is stable across events
+1. Push this repo to GitHub.
+2. Create a new Netlify site from the repo.
+3. Set the build command to `npm run build`.
+4. Set the publish directory to `dist`.
+5. Add the environment variable `TBA_API_KEY` in Netlify.
+6. Deploy.
+
+`netlify.toml` already points Netlify at `netlify/functions` and routes `/api/tba-event-data` to the function.
+
+## TBA Environment Variable
+
+The serverless function checks these names in order:
+
+```text
+TBA_API_KEY
+TBA_KEY
+X_TBA_AUTH_KEY
+```
+
+Use `TBA_API_KEY` unless you already have one of the others set. The key stays server-side in Netlify. The browser never receives it.
 
 ## Run Tests
 
 ```bash
-python3 -m unittest discover -s tests
+npm test
 ```
 
-## Next Steps
+## Notes About Accuracy
 
-Good follow-on improvements for a production version:
-
-- add direct Statbotics API ingestion
-- add MorScout export adapters for your exact column names
-- build a web dashboard for event and season views
-- separate auto, teleop, and endgame confidence reporting
+TBA provides official alliance-level outcomes, not per-scout truth. To make scout ranking useful anyway, this app estimates per-robot contributions in a way that still honors the official alliance totals. That makes the output practical for training and quality control, while staying grounded in real match results.
