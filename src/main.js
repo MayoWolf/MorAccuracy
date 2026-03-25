@@ -12,6 +12,7 @@ const state = {
   eventKey: "",
   csvText: "",
   result: null,
+  threshold: 85,
   loading: false,
   error: "",
 };
@@ -28,6 +29,13 @@ function escapeHtml(value) {
 
 function formatPercent(value) {
   return `${value.toFixed(1)}%`;
+}
+
+function thresholdStats(result) {
+  const matchedRows = result?.entries?.length ?? 0;
+  const atOrAbove = result?.entries?.filter((entry) => entry.accuracy >= state.threshold).length ?? 0;
+  const share = matchedRows > 0 ? (atOrAbove / matchedRows) * 100 : 0;
+  return { matchedRows, atOrAbove, share };
 }
 
 function renderHero() {
@@ -121,6 +129,7 @@ function renderControls() {
 
 function renderSummary(result) {
   const { summary } = result;
+  const threshold = thresholdStats(result);
   return `
     <section class="panel">
       <div class="panel-heading">
@@ -141,13 +150,37 @@ function renderSummary(result) {
           <strong>${formatPercent(summary.averageAccuracy)}</strong>
         </article>
         <article class="stat-card">
-          <span>85%+ data points</span>
-          <strong>${summary.matchedRowsAt85OrBetter}/${summary.matchedRows}</strong>
+          <span>${state.threshold}%+ data points</span>
+          <strong>${threshold.atOrAbove}/${threshold.matchedRows}</strong>
         </article>
+      </div>
+      <div class="threshold-panel">
+        <div class="threshold-copy">
+          <span class="status-kicker">Accuracy Threshold</span>
+          <strong>${state.threshold}% or better</strong>
+          <p>${formatPercent(threshold.share)} of benchmarked entries meet this mark.</p>
+        </div>
+        <label class="threshold-slider">
+          <input
+            id="threshold-range"
+            type="range"
+            min="50"
+            max="100"
+            step="1"
+            value="${state.threshold}"
+          />
+          <div class="threshold-ticks">
+            <span>50</span>
+            <span>75</span>
+            <span>85</span>
+            <span>95</span>
+            <span>100</span>
+          </div>
+        </label>
       </div>
       <div class="mini-leaders">
         <span>Most Reliable: <strong>${escapeHtml(summary.topScout || "N/A")}</strong></span>
-        <span>85%+ Share: <strong>${formatPercent(summary.matchedRowsAt85OrBetterRate)}</strong></span>
+        <span>${state.threshold}%+ Share: <strong>${formatPercent(threshold.share)}</strong></span>
         <span>Best Fuel: <strong>${escapeHtml(summary.topGroupScouts.fuel || "N/A")}</strong></span>
         <span>Best Auto: <strong>${escapeHtml(summary.topGroupScouts.auto || "N/A")}</strong></span>
         <span>Best Tower: <strong>${escapeHtml(summary.topGroupScouts.tower || "N/A")}</strong></span>
@@ -317,6 +350,7 @@ function render() {
   const fileInput = document.querySelector("#csv-file");
   const eventInput = document.querySelector("#event-key");
   const clearFileButton = document.querySelector("#clear-file");
+  const thresholdRange = document.querySelector("#threshold-range");
 
   if (eventInput) {
     eventInput.addEventListener("input", (event) => {
@@ -343,6 +377,13 @@ function render() {
       state.csvText = "";
       state.result = null;
       state.error = "";
+      render();
+    });
+  }
+
+  if (thresholdRange) {
+    thresholdRange.addEventListener("input", (event) => {
+      state.threshold = Number(event.target.value);
       render();
     });
   }
