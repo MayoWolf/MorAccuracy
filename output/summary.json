@@ -1,0 +1,402 @@
+{
+  "summary": {
+    "metrics_used": [
+      "auto_notes",
+      "teleop_notes",
+      "amp_notes",
+      "mobility",
+      "climbed"
+    ],
+    "total_entries_analyzed": 8,
+    "total_scouts_ranked": 3,
+    "overall_accuracy": 91.28,
+    "most_reliable_scout": "Jordan",
+    "least_reliable_scout": "Avery"
+  },
+  "leaderboard": [
+    {
+      "rank": 1,
+      "scout_name": "Jordan",
+      "accuracy": 93.91,
+      "consistency": 95.82,
+      "entries": 3,
+      "mean_absolute_error": 5.56,
+      "mean_signed_error": 1.33,
+      "bias": "balanced"
+    },
+    {
+      "rank": 2,
+      "scout_name": "Sam",
+      "accuracy": 90.69,
+      "consistency": 87.93,
+      "entries": 2,
+      "mean_absolute_error": 12.0,
+      "mean_signed_error": -11.0,
+      "bias": "undercounting"
+    },
+    {
+      "rank": 3,
+      "scout_name": "Avery",
+      "accuracy": 89.25,
+      "consistency": 83.5,
+      "entries": 3,
+      "mean_absolute_error": 11.22,
+      "mean_signed_error": -7.0,
+      "bias": "balanced"
+    }
+  ],
+  "entries": [
+    {
+      "scout_name": "Avery",
+      "team_key": "frc2471",
+      "match_key": "2026pncmp_qm1",
+      "accuracy": 96.72,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 3.0,
+          "expected": 3.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 12.0,
+          "expected": 11.0,
+          "accuracy": 95.0,
+          "signed_error": 0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 4.0,
+          "expected": 5.0,
+          "accuracy": 90.0,
+          "signed_error": -0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Jordan",
+      "team_key": "frc2471",
+      "match_key": "2026pncmp_qm1",
+      "accuracy": 93.28,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 2.0,
+          "expected": 3.0,
+          "accuracy": 83.33,
+          "signed_error": -0.1667
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 10.0,
+          "expected": 11.0,
+          "accuracy": 95.0,
+          "signed_error": -0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 6.0,
+          "expected": 5.0,
+          "accuracy": 90.0,
+          "signed_error": 0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Avery",
+      "team_key": "frc2910",
+      "match_key": "2026pncmp_qm1",
+      "accuracy": 77.76,
+      "bias": "undercounting",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 5.0,
+          "expected": 4.0,
+          "accuracy": 83.33,
+          "signed_error": 0.1667
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 14.0,
+          "expected": 15.0,
+          "accuracy": 95.0,
+          "signed_error": -0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 3.0,
+          "expected": 3.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 0.0,
+          "expected": 1.0,
+          "accuracy": 0.0,
+          "signed_error": -1.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Jordan",
+      "team_key": "frc2910",
+      "match_key": "2026pncmp_qm1",
+      "accuracy": 96.72,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 4.0,
+          "expected": 4.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 16.0,
+          "expected": 15.0,
+          "accuracy": 95.0,
+          "signed_error": 0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 2.0,
+          "expected": 3.0,
+          "accuracy": 90.0,
+          "signed_error": -0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Sam",
+      "team_key": "frc4488",
+      "match_key": "2026pncmp_qm2",
+      "accuracy": 84.66,
+      "bias": "undercounting",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 8.0,
+          "expected": 9.0,
+          "accuracy": 95.0,
+          "signed_error": -0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 5.0,
+          "expected": 5.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "mobility",
+          "observed": 0.0,
+          "expected": 1.0,
+          "accuracy": 0.0,
+          "signed_error": -1.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Jordan",
+      "team_key": "frc4488",
+      "match_key": "2026pncmp_qm2",
+      "accuracy": 91.72,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 2.0,
+          "expected": 1.0,
+          "accuracy": 83.33,
+          "signed_error": 0.1667
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 11.0,
+          "expected": 9.0,
+          "accuracy": 90.0,
+          "signed_error": 0.1
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 6.0,
+          "expected": 5.0,
+          "accuracy": 90.0,
+          "signed_error": 0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Sam",
+      "team_key": "frc1318",
+      "match_key": "2026pncmp_qm2",
+      "accuracy": 96.72,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 4.0,
+          "expected": 4.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 13.0,
+          "expected": 12.0,
+          "accuracy": 95.0,
+          "signed_error": 0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 2.0,
+          "expected": 3.0,
+          "accuracy": 90.0,
+          "signed_error": -0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    },
+    {
+      "scout_name": "Avery",
+      "team_key": "frc1318",
+      "match_key": "2026pncmp_qm2",
+      "accuracy": 93.28,
+      "bias": "balanced",
+      "metric_results": [
+        {
+          "metric": "auto_notes",
+          "observed": 3.0,
+          "expected": 4.0,
+          "accuracy": 83.33,
+          "signed_error": -0.1667
+        },
+        {
+          "metric": "teleop_notes",
+          "observed": 11.0,
+          "expected": 12.0,
+          "accuracy": 95.0,
+          "signed_error": -0.05
+        },
+        {
+          "metric": "amp_notes",
+          "observed": 4.0,
+          "expected": 3.0,
+          "accuracy": 90.0,
+          "signed_error": 0.1
+        },
+        {
+          "metric": "mobility",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        },
+        {
+          "metric": "climbed",
+          "observed": 1.0,
+          "expected": 1.0,
+          "accuracy": 100.0,
+          "signed_error": 0.0
+        }
+      ]
+    }
+  ]
+}

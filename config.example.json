@@ -1,0 +1,11 @@
+{
+  "scout_column": "scout_name",
+  "key_columns": ["team_key", "match_key"],
+  "metrics": [
+    { "name": "auto_notes", "weight": 1.2, "scale": 6 },
+    { "name": "teleop_notes", "weight": 1.8, "scale": 20 },
+    { "name": "amp_notes", "weight": 1.0, "scale": 10 },
+    { "name": "mobility", "weight": 0.8, "scale": 1 },
+    { "name": "climbed", "weight": 1.0, "scale": 1 }
+  ]
+}

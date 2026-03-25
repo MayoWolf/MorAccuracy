@@ -1,0 +1,9 @@
+scout_name,team_key,match_key,accuracy,bias
+Avery,frc2471,2026pncmp_qm1,96.72,balanced
+Jordan,frc2471,2026pncmp_qm1,93.28,balanced
+Avery,frc2910,2026pncmp_qm1,77.76,undercounting
+Jordan,frc2910,2026pncmp_qm1,96.72,balanced
+Sam,frc4488,2026pncmp_qm2,84.66,undercounting
+Jordan,frc4488,2026pncmp_qm2,91.72,balanced
+Sam,frc1318,2026pncmp_qm2,96.72,balanced
+Avery,frc1318,2026pncmp_qm2,93.28,balanced
