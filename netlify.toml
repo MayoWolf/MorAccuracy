@@ -4,6 +4,6 @@
   functions = "netlify/functions"
 
 [[redirects]]
-  from = "/api/tba/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/tba-event-data"
+  to = "/.netlify/functions/tba-event-data"
   status = 200

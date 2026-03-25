@@ -370,8 +370,18 @@ async function handleSubmit(event) {
     const scoutingRows = parseMorScoutCsv(parsed.data);
     const response = await fetch(`/api/tba-event-data?eventKey=${encodeURIComponent(state.eventKey)}`);
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || "Unable to fetch TBA event data.");
+      const rawText = await response.text();
+      let payload = {};
+      try {
+        payload = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        payload = {};
+      }
+      throw new Error(
+        payload.error ||
+          rawText ||
+          `Unable to fetch TBA event data. HTTP ${response.status}.`,
+      );
     }
 
     const tbaPayload = await response.json();
