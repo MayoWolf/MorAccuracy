@@ -1,0 +1,15 @@
+{
+  "name": "MorScout Accuracy Analyzer",
+  "short_name": "MorAccuracy",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#E5E7EB",
+  "background_color": "#E5E7EB",
+  "display": "standalone"
+}
