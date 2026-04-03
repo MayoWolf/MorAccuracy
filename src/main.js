@@ -1,5 +1,4 @@
 import "./styles.css";
-import Papa from "papaparse";
 
 import {
   analyzeScoutingData,
@@ -8,12 +7,13 @@ import {
 } from "./modules/analyzer.js";
 
 const state = {
-  csvFileName: "",
-  eventKey: "",
-  csvText: "",
+  sources: [],
+  selectedSourceKey: "",
+  sourceInfo: null,
   result: null,
   threshold: 85,
   loading: false,
+  loadingSources: true,
   error: "",
 };
 
@@ -38,20 +38,53 @@ function thresholdStats(result) {
   return { matchedRows, atOrAbove, share };
 }
 
+function buildApiPath(path, params) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (String(value || "").trim()) {
+      search.set(key, String(value).trim());
+    }
+  }
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+async function fetchJsonOrThrow(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const rawText = await response.text();
+    let payload = {};
+    try {
+      payload = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      payload = {};
+    }
+    throw new Error(payload.error || rawText || `Request failed. HTTP ${response.status}.`);
+  }
+  return response.json();
+}
+
+function getSelectedSource() {
+  return state.sources.find((source) => source.key === state.selectedSourceKey) || null;
+}
+
 function renderHero() {
+  const selectedSource = getSelectedSource();
+
   return `
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">MorScout Accuracy Analyzer</p>
-        <h1>Scout accuracy, shown like a match board.</h1>
+        <h1>Scout accuracy, auto-discovered from match tabs.</h1>
         <p class="lede">
-          Your CSV stays in the browser. The app pulls official event results from TBA,
-          estimates per-robot ground truth for objective fields, and ranks scouts by
-          overall accuracy plus phase-specific lines.
+          The app scans your configured Google Sheet for tabs named like <code>MS(CALAS)</code>,
+          ignores pit-scout tabs such as <code>PS(...)</code>, derives the event code from the tab
+          name, resolves the real TBA event, and ranks scouts by objective accuracy.
         </p>
         <div class="hero-strip">
-          <span class="hero-chip">${state.csvText ? "CSV locked in" : "CSV needed"}</span>
-          <span class="hero-chip">${state.eventKey ? `Event ${escapeHtml(state.eventKey)}` : "Enter event key"}</span>
+          <span class="hero-chip">${selectedSource ? escapeHtml(selectedSource.tabTitle) : "Choose an MS(...) tab"}</span>
+          <span class="hero-chip">${selectedSource ? `Event code ${escapeHtml(selectedSource.eventCodeRaw)}` : "Event code comes from tab name"}</span>
+          <span class="hero-chip">${state.sources.length} match tab${state.sources.length === 1 ? "" : "s"} found</span>
         </div>
       </div>
       <div class="hero-callout">
@@ -60,7 +93,7 @@ function renderHero() {
           ${benchmarkedMetricLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join("")}
         </ul>
         <p class="callout-note">
-          Netlify env var: <code>TBA_API_KEY</code>
+          Netlify vars: <code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code>GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code>, <code>GOOGLE_SHEETS_SPREADSHEET_ID</code>, <code>TBA_API_KEY</code>
         </p>
       </div>
     </section>
@@ -68,60 +101,63 @@ function renderHero() {
 }
 
 function renderControls() {
+  const selectedSource = getSelectedSource();
+  const sourceLabel = state.sourceInfo
+    ? `Last pull: ${escapeHtml(state.sourceInfo.rowCount)} rows from ${escapeHtml(state.sourceInfo.tabTitle)}`
+    : state.loadingSources
+      ? "Scanning Google Sheet tabs"
+      : selectedSource
+        ? `Ready: ${escapeHtml(selectedSource.tabTitle)}`
+        : "No match-scout tabs found";
+
   return `
     <section class="panel panel-form">
       <div class="panel-heading">
         <div>
           <h2>Run Event Analysis</h2>
-          <p>Use the event key from The Blue Alliance, like <code>2026casj</code>.</p>
+          <p>Pick one of the discovered <code>MS(...)</code> tabs. <code>PS(...)</code> tabs are ignored.</p>
         </div>
         <div class="status-block">
-          <span class="status-kicker">Upload State</span>
-          <strong>${state.csvText ? "CSV already loaded" : "Waiting for CSV"}</strong>
+          <span class="status-kicker">Source Status</span>
+          <strong>${sourceLabel}</strong>
         </div>
       </div>
-      <form id="analysis-form" class="form-grid">
+      <form id="analysis-form" class="form-grid form-grid-preset">
         <label class="field">
-          <span>Event key</span>
-          <input
-            id="event-key"
-            name="eventKey"
-            type="text"
-            placeholder="2026casj"
-            value="${escapeHtml(state.eventKey)}"
-            required
-          />
-        </label>
-        <div class="field field-upload">
-          <span>MorScout CSV</span>
-          <input id="csv-file" name="csvFile" type="file" accept=".csv,text/csv" class="sr-only" />
-          <label for="csv-file" class="upload-card ${state.csvText ? "is-loaded" : ""}">
-            <span class="upload-badge">${state.csvText ? "Loaded" : "Upload"}</span>
-            <strong>${escapeHtml(state.csvFileName || "Choose your exported MorScout CSV")}</strong>
-            <small>${
-              state.csvText
-                ? "This file is already stored in browser memory. You do not need to pick it again for reruns."
-                : "Pick the file once. After that, you can rerun analysis without reselecting it."
-            }</small>
-          </label>
-          <div class="upload-actions">
+          <span>Match scout tab</span>
+          <select id="source-key" name="sourceKey" ${state.loadingSources ? "disabled" : ""}>
             ${
-              state.csvText
-                ? '<button id="clear-file" type="button" class="ghost-button">Clear loaded file</button>'
-                : '<span class="upload-hint">The browser will keep the parsed CSV while this page stays open.</span>'
+              state.sources.length
+                ? state.sources
+                    .map(
+                      (source) => `
+                        <option value="${escapeHtml(source.key)}" ${source.key === state.selectedSourceKey ? "selected" : ""}>
+                          ${escapeHtml(source.tabTitle)} · ${escapeHtml(source.eventCodeRaw)}
+                        </option>
+                      `,
+                    )
+                    .join("")
+                : '<option value="">No MS(...) tabs available</option>'
             }
-          </div>
+          </select>
+        </label>
+        <div class="source-preview">
+          <span class="status-kicker">Derived Event</span>
+          <strong>${selectedSource ? `${escapeHtml(String(selectedSource.seasonYear))}${escapeHtml(selectedSource.eventCode)}` : "Waiting for tab selection"}</strong>
+          <small>${selectedSource ? `From tab ${escapeHtml(selectedSource.tabTitle)}. TBA will resolve the real event key from this code.` : "Set GOOGLE_SHEETS_SPREADSHEET_ID and add tabs named like MS(CALAS)."}</small>
         </div>
         <div class="action-cell">
-          <button class="primary-button" type="submit" ${state.loading ? "disabled" : ""}>
-            ${state.loading ? "Analyzing..." : "Run Analysis"}
+          <button class="primary-button" type="submit" ${
+            state.loading || state.loadingSources || !selectedSource ? "disabled" : ""
+          }>
+            ${state.loading ? "Pulling Tab..." : "Run Analysis"}
           </button>
         </div>
       </form>
       ${
         state.error
           ? `<div class="notice notice-error">${escapeHtml(state.error)}</div>`
-          : `<div class="notice">Only the event key goes to the Netlify function. Your CSV content stays in the browser.</div>`
+          : `<div class="notice">You no longer need <code>GOOGLE_SHEETS_RANGE</code> or <code>GOOGLE_SHEETS_EVENT_KEY</code>. The app discovers tabs and derives the TBA event from the <code>MS(...)</code> name.</div>`
       }
     </section>
   `;
@@ -130,11 +166,21 @@ function renderControls() {
 function renderSummary(result) {
   const { summary } = result;
   const threshold = thresholdStats(result);
+  const sourceLine = state.sourceInfo
+    ? `${state.sourceInfo.tabTitle} · ${state.sourceInfo.rowCount} rows pulled · resolved TBA key ${state.sourceInfo.resolvedEventKey}`
+    : "Source range unavailable";
+
   return `
     <section class="panel">
       <div class="panel-heading">
-        <h2>Event Snapshot</h2>
-        <p>${escapeHtml(summary.eventName || summary.eventKey)}</p>
+        <div>
+          <h2>Event Snapshot</h2>
+          <p>${escapeHtml(summary.eventName || summary.eventKey)}</p>
+        </div>
+        <div class="status-block status-block-soft">
+          <span class="status-kicker">Source</span>
+          <strong>${escapeHtml(sourceLine)}</strong>
+        </div>
       </div>
       <div class="stat-grid">
         <article class="stat-card">
@@ -257,7 +303,7 @@ function renderCoverage(result) {
 
   const warnings = result.warnings.length
     ? result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")
-    : "<li>No structural warnings. The uploaded CSV mapped cleanly to TBA match data.</li>";
+    : "<li>No structural warnings. The selected MS(...) tab mapped cleanly to TBA match data.</li>";
 
   return `
     <section class="two-up">
@@ -300,7 +346,7 @@ function renderDetails(result) {
     <section class="panel">
       <div class="panel-heading">
         <h2>Sample Entry Detail</h2>
-        <p>Showing the first 24 benchmarked rows after normalization and TBA matching.</p>
+        <p>Showing the first 24 benchmarked rows after Google Sheets normalization and TBA matching.</p>
       </div>
       <div class="table-wrap">
         <table>
@@ -324,9 +370,9 @@ function renderDetails(result) {
 function renderFooter() {
   return `
     <footer class="footer">
-      <p>Powered by The Blue Alliance official match APIs and your MorScout export.</p>
+      <p>Powered by The Blue Alliance official match APIs and discovered Google Sheets match-scout tabs.</p>
       <p>
-        Fields like comments, defense notes, reliability tags, and other qualitative observations stay visible in your CSV
+        Pit-scout tabs are ignored for this workflow, and qualitative observations can still live in the sheet
         but are not scored because TBA does not provide an objective truth source for them.
       </p>
     </footer>
@@ -347,37 +393,12 @@ function render() {
   `;
 
   const form = document.querySelector("#analysis-form");
-  const fileInput = document.querySelector("#csv-file");
-  const eventInput = document.querySelector("#event-key");
-  const clearFileButton = document.querySelector("#clear-file");
+  const sourceSelect = document.querySelector("#source-key");
   const thresholdRange = document.querySelector("#threshold-range");
 
-  if (eventInput) {
-    eventInput.addEventListener("input", (event) => {
-      state.eventKey = event.target.value.trim();
-    });
-  }
-
-  if (fileInput) {
-    fileInput.addEventListener("change", async (event) => {
-      const [file] = event.target.files;
-      if (!file) {
-        return;
-      }
-      state.csvFileName = file.name;
-      state.csvText = await file.text();
-      state.error = "";
-      render();
-    });
-  }
-
-  if (clearFileButton) {
-    clearFileButton.addEventListener("click", () => {
-      state.csvFileName = "";
-      state.csvText = "";
-      state.result = null;
-      state.error = "";
-      render();
+  if (sourceSelect) {
+    sourceSelect.addEventListener("change", (event) => {
+      state.selectedSourceKey = event.target.value;
     });
   }
 
@@ -394,18 +415,36 @@ function render() {
   }
 }
 
+async function loadSources() {
+  state.loadingSources = true;
+  state.error = "";
+  render();
+
+  try {
+    const payload = await fetchJsonOrThrow("/api/google-sheet-sources");
+    state.sources = payload.sources || [];
+    state.selectedSourceKey = payload.defaultSourceKey || state.sources[0]?.key || "";
+
+    if (!state.sources.length) {
+      throw new Error("No match-scout tabs were discovered in the configured Google Sheet.");
+    }
+  } catch (error) {
+    state.sources = [];
+    state.selectedSourceKey = "";
+    state.error = error instanceof Error ? error.message : "Unable to load source presets.";
+  } finally {
+    state.loadingSources = false;
+    render();
+  }
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   state.error = "";
 
-  if (!state.csvText) {
-    state.error = "Upload a MorScout CSV before running the analysis.";
-    render();
-    return;
-  }
-
-  if (!state.eventKey) {
-    state.error = "Enter a TBA event key, such as 2026casj.";
+  const selectedSource = getSelectedSource();
+  if (!selectedSource) {
+    state.error = "Select a discovered MS(...) tab before running analysis.";
     render();
     return;
   }
@@ -414,42 +453,39 @@ async function handleSubmit(event) {
   render();
 
   try {
-    const parsed = Papa.parse(state.csvText, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim(),
-    });
+    const [sheetPayload, tbaPayload] = await Promise.all([
+      fetchJsonOrThrow(
+        buildApiPath("/api/google-sheet-data", {
+          sourceKey: selectedSource.key,
+        }),
+      ),
+      fetchJsonOrThrow(
+        buildApiPath("/api/tba-event-data", {
+          eventCode: selectedSource.eventCode,
+          seasonYear: selectedSource.seasonYear,
+        }),
+      ),
+    ]);
 
-    if (parsed.errors.length) {
-      throw new Error(parsed.errors[0].message);
-    }
-
-    const scoutingRows = parseMorScoutCsv(parsed.data);
-    const response = await fetch(`/api/tba-event-data?eventKey=${encodeURIComponent(state.eventKey)}`);
-    if (!response.ok) {
-      const rawText = await response.text();
-      let payload = {};
-      try {
-        payload = rawText ? JSON.parse(rawText) : {};
-      } catch {
-        payload = {};
-      }
-      throw new Error(
-        payload.error ||
-          rawText ||
-          `Unable to fetch TBA event data. HTTP ${response.status}.`,
-      );
-    }
-
-    const tbaPayload = await response.json();
+    const scoutingRows = parseMorScoutCsv(sheetPayload.rows || []);
+    state.sourceInfo = {
+      key: sheetPayload.sourceKey,
+      label: sheetPayload.label,
+      tabTitle: sheetPayload.tabTitle,
+      eventCode: sheetPayload.eventCode,
+      eventCodeRaw: sheetPayload.eventCodeRaw,
+      seasonYear: sheetPayload.seasonYear,
+      rowCount: sheetPayload.rowCount || scoutingRows.length,
+      resolvedEventKey: tbaPayload.resolvedEventKey,
+    };
     state.result = analyzeScoutingData({
       scoutingRows,
       tbaPayload,
-      eventKey: state.eventKey,
-      csvFileName: state.csvFileName,
+      eventKey: tbaPayload.resolvedEventKey || `${selectedSource.seasonYear}${selectedSource.eventCode}`,
     });
   } catch (error) {
     state.result = null;
+    state.sourceInfo = null;
     state.error = error instanceof Error ? error.message : "Unexpected analysis failure.";
   } finally {
     state.loading = false;
@@ -458,3 +494,4 @@ async function handleSubmit(event) {
 }
 
 render();
+loadSources();

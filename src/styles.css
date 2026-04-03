@@ -274,6 +274,11 @@ small {
   display: block;
   margin-top: 5px;
   font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.status-block-soft {
+  background: white;
 }
 
 .form-grid {
@@ -281,6 +286,18 @@ small {
   grid-template-columns: 0.9fr 1.25fr auto;
   gap: 16px;
   align-items: stretch;
+}
+
+.form-grid-sheet {
+  grid-template-columns: 0.8fr 1.1fr 1.1fr auto;
+}
+
+.form-grid-preset {
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.95fr) auto;
+}
+
+.form-grid-configured {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .field {
@@ -302,10 +319,45 @@ input[type="text"] {
   box-shadow: inset 0 -4px 0 rgba(16, 16, 16, 0.04);
 }
 
+select {
+  width: 100%;
+  min-height: 72px;
+  border: 3px solid var(--line);
+  border-radius: 20px;
+  padding: 18px 18px 16px;
+  background: white;
+  font: inherit;
+  font-size: 1.05rem;
+  color: var(--ink);
+  box-shadow: inset 0 -4px 0 rgba(16, 16, 16, 0.04);
+}
+
 input[type="text"]:focus-visible,
+.field select:focus-visible,
 .upload-card:focus-visible {
   outline: 4px solid rgba(28, 87, 226, 0.22);
   outline-offset: 2px;
+}
+
+.source-preview {
+  border: 3px solid var(--line);
+  border-radius: 22px;
+  padding: 16px 18px;
+  background:
+    linear-gradient(135deg, rgba(28, 87, 226, 0.08), rgba(255, 255, 255, 0.96)),
+    white;
+}
+
+.source-preview strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.source-preview small {
+  display: block;
+  margin-top: 8px;
 }
 
 .sr-only {

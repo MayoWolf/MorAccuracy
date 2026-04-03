@@ -1,33 +1,95 @@
 # MorScout Accuracy Analyzer
 
-MorScout Accuracy Analyzer is a Netlify-ready web app that uploads a MorScout scouting export, fetches official event match data from The Blue Alliance through a secure serverless function, and ranks scouts by how closely their objective observations line up with the official benchmark.
+MorScout Accuracy Analyzer is a Netlify-ready web app that reads MorScout scouting rows from Google Sheets with a Google service account, discovers match-scout tabs named like `MS(CALAS)`, resolves the corresponding TBA event from the code inside the tab name, and ranks scouts by how closely their objective observations line up with official match data.
+
+## Required Netlify Variables
+
+Set these in Netlify:
+
+```text
+GOOGLE_SERVICE_ACCOUNT_EMAIL
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+GOOGLE_SHEETS_SPREADSHEET_ID
+TBA_API_KEY
+```
+
+Optional:
+
+```text
+GOOGLE_SHEETS_LABEL
+GOOGLE_SHEETS_SEASON_YEAR
+GOOGLE_SHEETS_DEFAULT_SOURCE_KEY
+```
+
+You do **not** need:
+
+```text
+GOOGLE_SHEETS_RANGE
+GOOGLE_SHEETS_EVENT_KEY
+```
+
+## How The Sheet Is Interpreted
+
+- The app looks at every tab in the configured spreadsheet.
+- Tabs named like `MS(CALAS)` are treated as match-scout tabs.
+- Tabs named like `PS(CAVEN)` are ignored by this workflow.
+- The code inside `MS(...)` is normalized and used as the TBA event code.
+- The selected tab title itself is used as the Google Sheets range, so no separate range variable is needed.
+
+Example:
+
+- `MS(CALAS)` becomes event code `calas`
+- With `GOOGLE_SHEETS_SEASON_YEAR=2026`, the app first tries `2026calas`
+- If needed, it also searches TBA's event list for that season to resolve the final event key
+
+## What Each Variable Does
+
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`: the Google service account email from IAM
+- `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`: the private key for that service account
+- `GOOGLE_SHEETS_SPREADSHEET_ID`: the Google Sheet that contains all the `MS(...)` and `PS(...)` tabs
+- `TBA_API_KEY`: your The Blue Alliance API key
+- `GOOGLE_SHEETS_LABEL`: optional display name shown in the app
+- `GOOGLE_SHEETS_SEASON_YEAR`: optional season year used when resolving TBA event keys; defaults to the current year
+- `GOOGLE_SHEETS_DEFAULT_SOURCE_KEY`: optional default tab title to preselect, such as `MS(CALAS)`
+
+## Google Sheets Setup
+
+1. Create or choose a Google Cloud project.
+2. Enable the Google Sheets API.
+3. Create a service account in IAM.
+4. Create a key for that service account.
+5. Copy the service account email into `GOOGLE_SERVICE_ACCOUNT_EMAIL`.
+6. Copy the private key into `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`.
+7. Share your Google Sheet with the service account email as a viewer.
+8. Copy the spreadsheet ID from the Google Sheet URL into `GOOGLE_SHEETS_SPREADSHEET_ID`.
+9. Add `TBA_API_KEY`.
+10. Optionally set `GOOGLE_SHEETS_SEASON_YEAR` if you want to pin the season instead of using the current year.
+
+Example spreadsheet URL:
+
+```text
+https://docs.google.com/spreadsheets/d/1abcDEFghiJKLmnopQRstuVWxyz1234567890/edit
+```
+
+The spreadsheet ID is:
+
+```text
+1abcDEFghiJKLmnopQRstuVWxyz1234567890
+```
 
 ## What This Version Scores
 
-Your current CSV schema supports objective benchmarking for:
+Each `MS(...)` tab must expose MorScout-style headers for these benchmarked fields:
 
+- `Scout Name`
+- `Match Number`
+- `Team Number`
 - `Auto FUEL Scored`
 - `Teleop FUEL Scored`
 - `Auto TOWER Level 1?`
 - `Teleop TOWER Level`
 
-The app intentionally does **not** score comments, defense notes, reliability tags, or other qualitative fields because TBA does not provide ground-truth data for those.
-
-## How The Scoring Works
-
-- The browser parses the uploaded MorScout CSV locally.
-- A Netlify function calls TBA using the `X-TBA-Auth-Key` header and returns event + match JSON.
-- Qualification matches are matched by `Match Number` and `Team Number`.
-- Official alliance metrics are taken from TBA's 2026 score breakdown:
-  - hub auto count
-  - hub teleop count
-  - auto tower completion count
-  - endgame tower level sum
-- The analyzer estimates each robot's contribution while constraining every alliance total to match the official TBA score breakdown.
-- Each scout receives:
-  - an accuracy percentage
-  - a consistency score
-  - an overcounting / undercounting / balanced bias label
+The analyzer intentionally does **not** score comments, defense notes, reliability tags, or other qualitative fields because TBA does not provide ground-truth data for those.
 
 ## Local Development
 
@@ -43,7 +105,7 @@ Start the Vite dev server:
 npm run dev
 ```
 
-If you want the Netlify function locally as well, use Netlify CLI instead:
+If you want the Netlify functions locally as well, use Netlify CLI instead:
 
 ```bash
 netlify dev
@@ -55,29 +117,17 @@ netlify dev
 2. Create a new Netlify site from the repo.
 3. Set the build command to `npm run build`.
 4. Set the publish directory to `dist`.
-5. Add the environment variable `TBA_API_KEY` in Netlify.
+5. Add the required Netlify environment variables.
 6. Deploy.
 
-`netlify.toml` already points Netlify at `netlify/functions` and routes `/api/tba-event-data` to the function.
+`netlify.toml` already routes:
 
-## TBA Environment Variable
-
-The serverless function checks these names in order:
-
-```text
-TBA_API_KEY
-TBA_KEY
-X_TBA_AUTH_KEY
-```
-
-Use `TBA_API_KEY` unless you already have one of the others set. The key stays server-side in Netlify. The browser never receives it.
+- `/api/tba-event-data`
+- `/api/google-sheet-data`
+- `/api/google-sheet-sources`
 
 ## Run Tests
 
 ```bash
 npm test
 ```
-
-## Notes About Accuracy
-
-TBA provides official alliance-level outcomes, not per-scout truth. To make scout ranking useful anyway, this app estimates per-robot contributions in a way that still honors the official alliance totals. That makes the output practical for training and quality control, while staying grounded in real match results.

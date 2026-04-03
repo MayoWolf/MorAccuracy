@@ -9,9 +9,6 @@
     "preview": "vite preview",
     "test": "node --test"
   },
-  "dependencies": {
-    "papaparse": "^5.5.3"
-  },
   "devDependencies": {
     "vite": "^7.1.0"
   }
