@@ -84,13 +84,15 @@ export default async (request) => {
     const headers = headerPayload.values?.[0] || [];
     const commentsIndex = headers.findIndex((header) => String(header || "").trim() === COMMENTS_HEADER);
     const existingAccuracyIndex = headers.findIndex((header) => String(header || "").trim() === ACCURACY_HEADER);
+    const currentColumnCount = Number(sheetInfo.gridProperties?.columnCount || headers.length || 0);
 
     let accuracyColumnIndex = existingAccuracyIndex;
     if (accuracyColumnIndex === -1) {
       accuracyColumnIndex = commentsIndex >= 0 ? commentsIndex + 1 : headers.length;
 
-      // If another used header already occupies the target slot, shift it right first.
-      if (accuracyColumnIndex < headers.length) {
+      // Insert a physical sheet column when the target slot is already occupied
+      // or when the new Accuracy column would land beyond the current grid width.
+      if (accuracyColumnIndex < headers.length || accuracyColumnIndex >= currentColumnCount) {
         await batchUpdateGoogleSpreadsheet(source.spreadsheetId, [
           {
             insertDimension: {
