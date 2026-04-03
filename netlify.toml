@@ -17,3 +17,8 @@
   from = "/api/google-sheet-sources"
   to = "/.netlify/functions/google-sheet-sources"
   status = 200
+
+[[redirects]]
+  from = "/api/google-sheet-accuracy-update"
+  to = "/.netlify/functions/google-sheet-accuracy-update"
+  status = 200

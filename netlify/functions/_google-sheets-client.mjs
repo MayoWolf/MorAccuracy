@@ -1,13 +1,13 @@
 import { createSign } from "node:crypto";
 
 const GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const GOOGLE_SHEETS_API_BASE_URL = "https://sheets.googleapis.com/v4/spreadsheets";
 
-export async function fetchGoogleSheetMetadata(spreadsheetId) {
+export async function fetchGoogleSheetMetadata(spreadsheetId, fields = "sheets.properties.title") {
   const accessToken = await getAccessToken(getServiceAccountCredentials());
   const response = await fetch(
-    `${GOOGLE_SHEETS_API_BASE_URL}/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties.title`,
+    `${GOOGLE_SHEETS_API_BASE_URL}/${encodeURIComponent(spreadsheetId)}?fields=${encodeURIComponent(fields)}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -42,6 +42,60 @@ export async function fetchGoogleSheetValues(spreadsheetId, range) {
   if (!response.ok) {
     throw new Error(
       payload?.error?.message || `Google Sheets values request failed with status ${response.status}.`,
+    );
+  }
+
+  return payload;
+}
+
+export async function updateGoogleSheetValues(spreadsheetId, range, values, valueInputOption = "USER_ENTERED") {
+  const accessToken = await getAccessToken(getServiceAccountCredentials());
+  const response = await fetch(
+    `${GOOGLE_SHEETS_API_BASE_URL}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueInputOption=${encodeURIComponent(valueInputOption)}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        range,
+        majorDimension: "ROWS",
+        values,
+      }),
+    },
+  );
+
+  const payload = await safeJson(response);
+  if (!response.ok) {
+    throw new Error(
+      payload?.error?.message || `Google Sheets update request failed with status ${response.status}.`,
+    );
+  }
+
+  return payload;
+}
+
+export async function batchUpdateGoogleSpreadsheet(spreadsheetId, requests) {
+  const accessToken = await getAccessToken(getServiceAccountCredentials());
+  const response = await fetch(
+    `${GOOGLE_SHEETS_API_BASE_URL}/${encodeURIComponent(spreadsheetId)}:batchUpdate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ requests }),
+    },
+  );
+
+  const payload = await safeJson(response);
+  if (!response.ok) {
+    throw new Error(
+      payload?.error?.message || `Google Sheets batch update failed with status ${response.status}.`,
     );
   }
 

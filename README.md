@@ -1,6 +1,6 @@
 # MorScout Accuracy Analyzer
 
-MorScout Accuracy Analyzer is a Netlify-ready web app that reads MorScout scouting rows from Google Sheets with a Google service account, discovers match-scout tabs named like `MS(CALAS)`, resolves the corresponding TBA event from the code inside the tab name, and ranks scouts by how closely their objective observations line up with official match data.
+MorScout Accuracy Analyzer is a Netlify-ready web app that reads MorScout scouting rows from Google Sheets with a Google service account, discovers match-scout tabs named like `MS(CALAS)`, resolves the corresponding TBA event from the code inside the tab name, ranks scouts by how closely their objective observations line up with official match data, and writes each row's accuracy back into the sheet.
 
 ## Required Netlify Variables
 
@@ -35,6 +35,7 @@ GOOGLE_SHEETS_EVENT_KEY
 - Tabs named like `PS(CAVEN)` are ignored by this workflow.
 - The code inside `MS(...)` is normalized and used as the TBA event code.
 - The selected tab title itself is used as the Google Sheets range, so no separate range variable is needed.
+- After analysis, the app adds or reuses an `Accuracy` column immediately to the right of `General Comments` and fills in the row accuracy percentage.
 
 Example:
 
@@ -60,7 +61,7 @@ Example:
 4. Create a key for that service account.
 5. Copy the service account email into `GOOGLE_SERVICE_ACCOUNT_EMAIL`.
 6. Copy the private key into `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`.
-7. Share your Google Sheet with the service account email as a viewer.
+7. Share your Google Sheet with the service account email as an editor.
 8. Copy the spreadsheet ID from the Google Sheet URL into `GOOGLE_SHEETS_SPREADSHEET_ID`.
 9. Add `TBA_API_KEY`.
 10. Optionally set `GOOGLE_SHEETS_SEASON_YEAR` if you want to pin the season instead of using the current year.
@@ -90,6 +91,12 @@ Each `MS(...)` tab must expose MorScout-style headers for these benchmarked fiel
 - `Teleop TOWER Level`
 
 The analyzer intentionally does **not** score comments, defense notes, reliability tags, or other qualitative fields because TBA does not provide ground-truth data for those.
+
+## Accuracy Write-Back
+
+- The app writes an `Accuracy` header next to `General Comments` if it does not already exist.
+- Each analyzed row gets its overall row accuracy written back as a percentage like `87.4%`.
+- Rows that are present in the sheet but cannot be benchmarked are left blank in the `Accuracy` column.
 
 ## Local Development
 
@@ -125,6 +132,7 @@ netlify dev
 - `/api/tba-event-data`
 - `/api/google-sheet-data`
 - `/api/google-sheet-sources`
+- `/api/google-sheet-accuracy-update`
 
 ## Run Tests
 

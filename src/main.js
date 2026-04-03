@@ -49,8 +49,8 @@ function buildApiPath(path, params) {
   return query ? `${path}?${query}` : path;
 }
 
-async function fetchJsonOrThrow(url) {
-  const response = await fetch(url);
+async function fetchJsonOrThrow(url, options = {}) {
+  const response = await fetch(url, options);
   if (!response.ok) {
     const rawText = await response.text();
     let payload = {};
@@ -167,7 +167,7 @@ function renderSummary(result) {
   const { summary } = result;
   const threshold = thresholdStats(result);
   const sourceLine = state.sourceInfo
-    ? `${state.sourceInfo.tabTitle} · ${state.sourceInfo.rowCount} rows pulled · resolved TBA key ${state.sourceInfo.resolvedEventKey}`
+    ? `${state.sourceInfo.tabTitle} · ${state.sourceInfo.rowCount} rows pulled · resolved TBA key ${state.sourceInfo.resolvedEventKey} · Accuracy synced to ${state.sourceInfo.accuracyColumnLetter}${state.sourceInfo.updatedRows ? ` (${state.sourceInfo.updatedRows} rows)` : ""}`
     : "Source range unavailable";
 
   return `
@@ -468,6 +468,44 @@ async function handleSubmit(event) {
     ]);
 
     const scoutingRows = parseMorScoutCsv(sheetPayload.rows || []);
+    const analysisResult = analyzeScoutingData({
+      scoutingRows,
+      tbaPayload,
+      eventKey: tbaPayload.resolvedEventKey || `${selectedSource.seasonYear}${selectedSource.eventCode}`,
+    });
+
+    const accuracyByRowNumber = new Map(
+      analysisResult.entries
+        .filter((entry) => Number.isInteger(Number(entry.raw?.__sheetRowNumber)))
+        .map((entry) => [Number(entry.raw.__sheetRowNumber), formatPercent(entry.accuracy)]),
+    );
+
+    let accuracySync;
+    try {
+      accuracySync = await fetchJsonOrThrow("/api/google-sheet-accuracy-update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sourceKey: selectedSource.key,
+          updates: (sheetPayload.rows || []).map((row) => ({
+            rowNumber: row.__sheetRowNumber,
+            accuracy: accuracyByRowNumber.get(Number(row.__sheetRowNumber)) || "",
+          })),
+        }),
+      });
+    } catch (syncError) {
+      state.error =
+        syncError instanceof Error
+          ? `Analysis ran, but sheet write-back failed: ${syncError.message}`
+          : "Analysis ran, but sheet write-back failed.";
+      accuracySync = {
+        columnLetter: "unknown",
+        updatedRows: 0,
+      };
+    }
+
     state.sourceInfo = {
       key: sheetPayload.sourceKey,
       label: sheetPayload.label,
@@ -477,12 +515,10 @@ async function handleSubmit(event) {
       seasonYear: sheetPayload.seasonYear,
       rowCount: sheetPayload.rowCount || scoutingRows.length,
       resolvedEventKey: tbaPayload.resolvedEventKey,
+      updatedRows: accuracySync.updatedRows,
+      accuracyColumnLetter: accuracySync.columnLetter,
     };
-    state.result = analyzeScoutingData({
-      scoutingRows,
-      tbaPayload,
-      eventKey: tbaPayload.resolvedEventKey || `${selectedSource.seasonYear}${selectedSource.eventCode}`,
-    });
+    state.result = analysisResult;
   } catch (error) {
     state.result = null;
     state.sourceInfo = null;

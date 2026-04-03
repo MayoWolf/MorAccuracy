@@ -85,10 +85,15 @@ function rowsFromSheetValues(values) {
   }
 
   return dataRows
-    .filter((row) => row.some((value) => String(value || "").trim() !== ""))
-    .map((row) =>
-      Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])),
-    );
+    .map((row, index) => ({
+      row,
+      sheetRowNumber: index + 2,
+    }))
+    .filter(({ row }) => row.some((value) => String(value || "").trim() !== ""))
+    .map(({ row, sheetRowNumber }) => ({
+      ...Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])),
+      __sheetRowNumber: sheetRowNumber,
+    }));
 }
 
 function json(body, status = 200, headers = {}) {
